@@ -1,0 +1,138 @@
+{
+  "name": "application_load_balancer_health_check_failure_during_green_deployment_for_aws_ecs_fargate",
+  "description": "This incident type involves ECS tasks failing Application Load Balancer health checks during a new green deployment in an AWS ECS Fargate environment. In such a scenario, the issue may be caused by multiple ECS services trying to register their tasks to the same green target group, leading to a discrepancy. The recommended troubleshooting step is to update the load balancer configuration to ensure that only one ECS service or port is registered to one target group.",
+  "params": [
+    {
+      "name": "CONTAINER_PORT",
+      "value": ""
+    },
+    {
+      "name": "LOAD_BALANCER_ARN",
+      "value": ""
+    },
+    {
+      "name": "SERVICE_NAME",
+      "value": ""
+    },
+    {
+      "name": "CONTAINER_NAME",
+      "value": ""
+    },
+    {
+      "name": "TARGET_GROUP_ARN",
+      "value": ""
+    },
+    {
+      "name": "TASK_DEFINITION_ARN",
+      "value": ""
+    },
+    {
+      "name": "CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Application Load Balancer Health Check Failure During Green Deployment for AWS ECS Fargate\nThis incident type involves ECS tasks failing Application Load Balancer health checks during a new green deployment in an AWS ECS Fargate environment. In such a scenario, the issue may be caused by multiple ECS services trying to register their tasks to the same green target group, leading to a discrepancy. The recommended troubleshooting step is to update the load balancer configuration to ensure that only one ECS service or port is registered to one target group."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## List all the available services in the cluster"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `aws ecs list-services --cluster ${CLUSTER_NAME}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Describe the specified ECS service to check its details"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `aws ecs describe-services --cluster ${CLUSTER_NAME} --services ${SERVICE_NAME}`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Describe the specified task definition"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `aws ecs describe-task-definition --task-definition ${TASK_DEFINITION_ARN}`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## List all the registered target groups of the specified load balancer"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `aws elbv2 describe-target-groups --load-balancer-arn ${LOAD_BALANCER_ARN}`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## List all the tasks registered to the specified target group"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_ecs_task_ips($TARGET_GROUP_ARN, $CLUSTER_NAME)"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Update the load balancer configuration to ensure that only one ECS service or port is registered to one target group."
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_cluster_update($CONTAINER_PORT, $CONTAINER_NAME, $TARGET_GROUP_ARN, $CLUSTER_NAME)"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check the current status of the ECS Service and tasks to determine whether they are running correctly."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_ecs_status_check($SERVICE_NAME, $CLUSTER_NAME)"
+    }
+  ]
+}
